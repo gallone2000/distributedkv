@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	"encoding/json"
-	"net/http"
 	httptools "distributedkv/httpTools"
 	"distributedkv/models"
+	"encoding/json"
+	"net/http"
 )
 
 func GetNodes(w http.ResponseWriter, r *http.Request, app *models.App) {
@@ -24,6 +24,10 @@ func GetNodes(w http.ResponseWriter, r *http.Request, app *models.App) {
 
 func GetHealtStatus(w http.ResponseWriter, r *http.Request, app *models.App) {
 	message := "healthy"
+	isHealthy := *app.Healthy
+	if !isHealthy {
+		message = "unhealthy"
+	}
 	httptools.SendResponse(w, http.StatusOK, message)
 	return
 }
@@ -42,7 +46,7 @@ func Rejoin(w http.ResponseWriter, r *http.Request, app *models.App) {
 		return
 	}
 	node := models.Node{URL: req.Message}
-	// check if node is in the failed nodes list
+	// check if the node is in the active nodes list
 	// send to the node a request to /health endpoint
 	// if the response is successful so the node is healthy
 	// add the node to the list of active nodes
@@ -52,5 +56,18 @@ func Rejoin(w http.ResponseWriter, r *http.Request, app *models.App) {
 }
 
 func GetFailedNodes(w http.ResponseWriter, r *http.Request, app *models.App) {
-	//returns the list of failed nodes in App.FailedNodes.Nodes
+	//returns the list of failed nodes in app.FailedNodes.GetAllNodes()
+
+	jsonData, err := json.Marshal(app.FailedNodes.GetAllNodes())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

@@ -2,12 +2,12 @@ package controllers
 
 import (
 	"bytes"
+	httptools "distributedkv/httpTools"
+	"distributedkv/models"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
-	httptools "distributedkv/httpTools"
-	"distributedkv/models"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -80,14 +80,20 @@ func hasConsensus(req httptools.Request, app *models.App) bool {
 	hasConsensus := false
 	//votes := 0
 	//halfPlusOne := int(math.Ceil(float64(countNodes) / 2))
-	// for _, node := range app.ActiveNodes.Nodes
+	// for _, node := range app.ActiveNodes.GetAllNodes()
 	// check the response and if the node gave the consensus update the votes variable => votes = votes + 1
 	// if/when the number of positive votes is >= halfPlusOne stop to send other requests and return true
+	// if (votes >= halfPlusOne) {
+	//    return true
+	// }
 	//
 	//
 	// SOMETHING LIKE THIS MAYBE A go routine with parallelism would be better
 	// votes := 0
-	// for _, node := range app.ActiveNodes.Nodes {
+	// for _, node := range app.ActiveNodes.GetAllNodes() {
+	// if votes >= halfPlusOne {
+	// 	return true
+	// }
 	// 	url := fmt.Sprintf("%s/set", node.URL)
 	// 	err := sendRequestToNode(req, url)
 	// 	if err != nil {
@@ -116,7 +122,7 @@ func sendRequestToNode(req httptools.Request, nodeURL string) error {
 
 func confirmSuccessfullySet(req httptools.Request, app *models.App) {
 	//I used a for loop here but it's more efficient to send the requests in parallel
-	for _, node := range app.ActiveNodes.Nodes {
+	for _, node := range app.ActiveNodes.GetAllNodes() {
 		url := fmt.Sprintf("%s/confirm", node.URL)
 		sendRequestToNode(req, url)
 	}
@@ -143,7 +149,7 @@ func ConfirmSet(w http.ResponseWriter, r *http.Request, app *models.App) {
 	app.Store.Put(key, value)
 	//remove the key/value pair from the temporary store using the uuid request
 	app.TmpStore.Delete(req.ID)
-	message := "stope properly updated"
+	message := "store properly updated"
 	httptools.SendResponse(w, http.StatusOK, message)
 	return
 }

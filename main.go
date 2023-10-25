@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
 	"distributedkv/controllers"
 	"distributedkv/models"
 	"distributedkv/schedulers"
+	"fmt"
+	"log"
+	"net/http"
 
 	"github.com/gorilla/mux"
 )
@@ -16,8 +16,12 @@ func main() {
 	app = app.InitApp()
 	router := initRouter(app)
 	httpPort := app.Viper.GetString("HTTP_PORT")
-	schedulers.RejoinScheduler(&app)
+
+	// load nodes URLs from NODES in .env file
+	// send requests to /nodes endpoint to fetch the list of active nodes
 	schedulers.GetActiveNodesScheduler(&app, true)
+
+	// send requests to /failed-nodes endpoint to fetch the list of failed nodes
 	schedulers.GetFailedNodesScheduler(&app, true)
 
 	// here I start the routines that will do few checks every after a predefined interval
